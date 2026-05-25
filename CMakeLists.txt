@@ -56,7 +56,7 @@ install(TARGETS btd700d RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 install(FILES daemon/btd700d.service DESTINATION lib/systemd/user)
 
 # CLI tool
-add_executable(btd700ctl btd700ctl.c)
+add_executable(btd700-cli btd700-cli.c)
 target_link_libraries(btd700ctl PRIVATE btd700ctl::btd700ctl)
 target_compile_features(btd700ctl PRIVATE c_std_99)
 install(TARGETS btd700ctl RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
