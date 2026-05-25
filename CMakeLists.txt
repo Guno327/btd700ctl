@@ -47,10 +47,6 @@ install(DIRECTORY include/btd700
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
 
-# example app
-add_executable(btd700_example example.cpp)
-target_link_libraries(btd700_example PRIVATE btd700ctl::btd700ctl)
-
 # daemon
 add_executable(btd700d daemon/btd700d.c)
 target_link_libraries(btd700d PRIVATE btd700ctl::btd700ctl)
@@ -59,3 +55,8 @@ target_compile_features(btd700d PRIVATE c_std_99)
 install(TARGETS btd700d RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 install(FILES daemon/btd700d.service DESTINATION lib/systemd/user)
 
+# CLI tool
+add_executable(btd700ctl btd700ctl.c)
+target_link_libraries(btd700ctl PRIVATE btd700ctl::btd700ctl)
+target_compile_features(btd700ctl PRIVATE c_std_99)
+install(TARGETS btd700ctl RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
