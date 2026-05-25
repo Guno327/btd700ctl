@@ -42,15 +42,15 @@ static btd700_driver_t *open_driver(void) {
 }
 
 static void cmd_list(btd700_driver_t *drv) {
-  uint16_t supported = 0, enabled = 0;
+  uint16_t supported = 0, active = 0;
   die(btd700_driver_supported_codecs(drv, &supported), "supported_codecs");
-  die(btd700_driver_enabled_codecs(drv, &enabled), "enabled_codecs");
+  die(btd700_driver_active_codec(drv, &active), "active_codec");
 
-  printf("%-15s %-10s %s\n", "CODEC", "SUPPORTED", "ENABLED");
+  printf("%-15s %-10s %s\n", "CODEC", "SUPPORTED", "ACTIVE");
   for (size_t i = 0; i < N_CODECS; i++) {
     uint16_t bit = (uint16_t)(1u << CODECS[i].c);
     printf("%-15s %-10s %s\n", CODECS[i].name, (supported & bit) ? "yes" : "no",
-           (enabled & bit) ? "yes" : "no");
+           (active & bit) ? "yes" : "no");
   }
 }
 
@@ -80,12 +80,27 @@ static void cmd_set(btd700_driver_t *drv, const char *name) {
   printf("set codec to %s\n", name);
 }
 
+static void cmd_enable(btd700_driver_t *drv, int argc, char **argv) {
+  uint16_t mask = 0;
+  for (int i = 0; i < argc; i++) {
+    btd700_codec_t c;
+    if (parse_codec(argv[i], &c) != 0) {
+      fprintf(stderr, "unknown codec '%s'\n", argv[i]);
+      exit(2);
+    }
+    mask |= (uint16_t)(1u << c);
+  }
+  die(btd700_driver_set_codec_mask(drv, mask), "set_codec_mask");
+  printf("enabled codecs: 0x%04x\n", mask);
+}
+
 static void usage(void) {
   fprintf(stderr,
           "usage: btd700ctl <command> [args]\n"
-          "  list             show supported and enabled codecs\n"
-          "  current          show currently active codec\n"
-          "  set <codec>      force a specific codec\n"
+          "  list                    show supported and active codecs\n"
+          "  current                 show currently active codec\n"
+          "  set <codec>             force a specific codec\n"
+          "  enable <codec> [...]    restrict negotiation to listed codecs\n"
           "\n"
           "codecs: sbc, aptx, aptx-adaptive, aptx-lossless, aptx-lite, lc3\n");
   exit(2);
@@ -95,7 +110,6 @@ int main(int argc, char **argv) {
   if (argc < 2)
     usage();
   btd700_driver_t *drv = open_driver();
-  int rc = 0;
   if (strcmp(argv[1], "list") == 0)
     cmd_list(drv);
   else if (strcmp(argv[1], "current") == 0)
@@ -104,10 +118,13 @@ int main(int argc, char **argv) {
     if (argc < 3)
       usage();
     cmd_set(drv, argv[2]);
-  } else {
+  } else if (strcmp(argv[1], "enable") == 0) {
+    if (argc < 3)
+      usage();
+    cmd_enable(drv, argc - 2, argv + 2);
+  } else
     usage();
-  }
   btd700_driver_disconnect(drv);
   btd700_driver_destroy(drv);
-  return rc;
+  return 0;
 }
